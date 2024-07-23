@@ -2,8 +2,9 @@ package core
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/binary"
+	"encoding/gob"
+	"fmt"
+	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/lonySp/go-blockchain/types"
 	"io"
 )
@@ -18,90 +19,82 @@ type Header struct {
 	Nonce     uint64
 }
 
-// EnCodeBinary 方法将区块头编码到 io.Writer
-// EnCodeBinary method encodes the block header to an io.Writer
-func (h *Header) EnCodeBinary(w io.Writer) error {
-	if err := binary.Write(w, binary.LittleEndian, &h.Version); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, &h.PrevBlock); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, &h.Timestamp); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.LittleEndian, &h.Height); err != nil {
-		return err
-	}
-	return binary.Write(w, binary.LittleEndian, &h.Nonce)
-}
-
-// DecodeBinary 方法从 io.Reader 解码区块头
-// DecodeBinary method decodes the block header from an io.Reader
-func (h *Header) DecodeBinary(r io.Reader) error {
-	if err := binary.Read(r, binary.LittleEndian, &h.Version); err != nil {
-		return err
-	}
-	if err := binary.Read(r, binary.LittleEndian, &h.PrevBlock); err != nil {
-		return err
-	}
-	if err := binary.Read(r, binary.LittleEndian, &h.Timestamp); err != nil {
-		return err
-	}
-	if err := binary.Read(r, binary.LittleEndian, &h.Height); err != nil {
-		return err
-	}
-	return binary.Read(r, binary.LittleEndian, &h.Nonce)
-}
-
 // Block 结构体表示区块
 // Block struct represents the block
 type Block struct {
-	Header
+	*Header
 	Transaction []Transaction
+	Validator   crypto.PublicKey
+	Signature   *crypto.Signature
 
 	// 缓存的区块头哈希
 	// Cached version of the header hash
 	hash types.Hash
 }
 
-// Hash 方法计算并返回区块头的哈希值
-// Hash method calculates and returns the hash of the block header
-func (b *Block) Hash() types.Hash {
-	buf := &bytes.Buffer{}
-	b.Header.EnCodeBinary(buf)
+// NewBlock 创建一个新的区块
+// NewBlock creates a new block
+func NewBlock(h *Header, txx []Transaction) *Block {
+	return &Block{
+		Header:      h,
+		Transaction: txx,
+	}
+}
 
-	if b.hash.IsZero() {
-		b.hash = types.Hash(sha256.Sum256(buf.Bytes()))
+// Sign 方法使用私钥对区块头数据进行签名
+// Sign method signs the block header data using the private key
+func (b *Block) Sign(privateKey crypto.PrivateKey) error {
+	sig, err := privateKey.Sign(b.HeaderData())
+	if err != nil {
+		return err
 	}
 
+	b.Validator = privateKey.PublicKey()
+	b.Signature = sig
+	return nil
+}
+
+// Verify 方法验证区块签名的有效性
+// Verify method verifies the validity of the block signature
+func (b *Block) Verify() error {
+	if b.Signature == nil {
+		return fmt.Errorf("block has no signature")
+	}
+
+	if !b.Signature.Verify(b.Validator, b.HeaderData()) {
+		return fmt.Errorf("block has invalid signature")
+	}
+
+	return nil
+}
+
+// Decode 方法解码区块
+// Decode method decodes the block
+func (b *Block) Decode(r io.Reader, dec Decoder[*Block]) error {
+	return dec.Decode(r, b)
+}
+
+// Encode 方法编码区块
+// Encode method encodes the block
+func (b *Block) Encode(w io.Writer, enc Encoder[*Block]) error {
+	return enc.Encode(w, b)
+}
+
+// Hash 方法计算区块的哈希值
+// Hash method calculates the hash of the block
+func (b *Block) Hash(hasher Hasher[*Block]) types.Hash {
+	if b.hash.IsZero() {
+		b.hash = hasher.Hash(b)
+	}
 	return b.hash
 }
 
-// EncodeBinary 方法将区块编码到 io.Writer
-// EncodeBinary method encodes the block to an io.Writer
-func (b *Block) EncodeBinary(w io.Writer) error {
-	if err := b.Header.EnCodeBinary(w); err != nil {
-		return err
-	}
-	for _, tx := range b.Transaction {
-		if err := tx.EncodeBinary(w); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// HeaderData 方法返回区块头的二进制数据
+// HeaderData method returns the binary data of the block header
+func (b *Block) HeaderData() []byte {
+	buf := &bytes.Buffer{}
+	enc := gob.NewEncoder(buf)
+	enc.Encode(b.Header)
 
-// DecodeBinary 方法从 io.Reader 解码区块
-// DecodeBinary method decodes the block from an io.Reader
-func (b *Block) DecodeBinary(r io.Reader) error {
-	if err := b.Header.DecodeBinary(r); err != nil {
-		return err
-	}
-	for _, tx := range b.Transaction {
-		if err := tx.DecodeBinary(r); err != nil {
-			return err
-		}
-	}
-	return nil
+	return buf.Bytes()
 }
