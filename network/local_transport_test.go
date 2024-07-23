@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// TestConnect 测试 Connect 方法
+// TestConnect tests the Connect method
 func TestConnect(t *testing.T) {
 	tra := NewLocalTransport("A")
 	trb := NewLocalTransport("B")
@@ -14,6 +16,8 @@ func TestConnect(t *testing.T) {
 	//assert.Equal(t, trb.peers[tra.Addr()], tra)
 }
 
+// TestSendMessage 测试 SendMessage 方法
+// TestSendMessage tests the SendMessage method
 func TestSendMessage(t *testing.T) {
 	tra := NewLocalTransport("A")
 	trb := NewLocalTransport("B")

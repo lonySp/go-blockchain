@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// LocalTransport 结构体表示本地传输
+// LocalTransport struct represents local transport
 type LocalTransport struct {
 	addr       NetAddr
 	consumerCh chan RPC
@@ -12,6 +14,8 @@ type LocalTransport struct {
 	peers      map[NetAddr]*LocalTransport
 }
 
+// NewLocalTransport 创建并返回一个新的 LocalTransport 实例
+// NewLocalTransport creates and returns a new LocalTransport instance
 func NewLocalTransport(addr NetAddr) Transport {
 	return &LocalTransport{
 		addr:       addr,
@@ -20,12 +24,15 @@ func NewLocalTransport(addr NetAddr) Transport {
 	}
 }
 
+// Consume 方法返回一个 RPC 消费通道
+// Consume method returns a RPC consumption channel
 func (t *LocalTransport) Consume() <-chan RPC {
 	return t.consumerCh
 }
 
+// Connect 方法连接两个传输节点
+// Connect method connects two transport nodes
 func (t *LocalTransport) Connect(tr Transport) error {
-	// ps: Lock 表示写操作 Write_Lock
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -33,8 +40,9 @@ func (t *LocalTransport) Connect(tr Transport) error {
 	return nil
 }
 
+// SendMessage 方法发送消息到指定地址
+// SendMessage method sends a message to the specified address
 func (t *LocalTransport) SendMessage(to NetAddr, payLoad []byte) error {
-	// ps: RLock 表示读操作 Read_Lock
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -51,6 +59,8 @@ func (t *LocalTransport) SendMessage(to NetAddr, payLoad []byte) error {
 	return nil
 }
 
+// Addr 方法返回传输节点的地址
+// Addr method returns the address of the transport node
 func (t *LocalTransport) Addr() NetAddr {
 	return t.addr
 }
