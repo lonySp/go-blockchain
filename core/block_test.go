@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// randomBlock 创建一个随机区块
+// randomBlock creates a random block
 func randomBlock(height uint32) *Block {
 	header := &Header{
 		Version:   1,
@@ -19,6 +21,18 @@ func randomBlock(height uint32) *Block {
 
 	return NewBlock(header, []Transaction{tx})
 }
+
+// randomBlockWithSignature 创建一个带签名的随机区块
+// randomBlockWithSignature creates a random block with a signature
+func randomBlockWithSignature(t *testing.T, height uint32) *Block {
+	privateKey := crypto.GeneratePrivateKey()
+	bc := randomBlock(height)
+	assert.Nil(t, bc.Sign(privateKey))
+	return bc
+}
+
+// TestSignBlock 测试区块签名功能
+// TestSignBlock tests the block signing functionality
 func TestSignBlock(t *testing.T) {
 	privateKey := crypto.GeneratePrivateKey()
 	b := randomBlock(0)
@@ -26,6 +40,8 @@ func TestSignBlock(t *testing.T) {
 	assert.NotNil(t, b.Signature)
 }
 
+// TestVerifyBlock 测试区块签名验证功能
+// TestVerifyBlock tests the block signature verification functionality
 func TestVerifyBlock(t *testing.T) {
 	privateKey := crypto.GeneratePrivateKey()
 	b := randomBlock(0)
