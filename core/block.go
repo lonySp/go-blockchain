@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"go-blockchain/types"
+	"github.com/lonySp/go-blockchain/types"
 	"io"
 )
 

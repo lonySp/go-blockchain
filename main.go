@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-blockchain/network"
+	"github.com/lonySp/go-blockchain/network"
 	"time"
 )
 

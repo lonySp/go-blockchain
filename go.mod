@@ -1,4 +1,4 @@
-module go-blockchain
+module github.com/lonySp/go-blockchain
 
 go 1.22
 

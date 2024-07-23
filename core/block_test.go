@@ -3,8 +3,8 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"github.com/lonySp/go-blockchain/types"
 	"github.com/stretchr/testify/assert"
-	"go-blockchain/types"
 	"testing"
 	"time"
 )
