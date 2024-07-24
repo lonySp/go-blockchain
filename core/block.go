@@ -12,11 +12,20 @@ import (
 // Header 结构体表示区块头
 // Header struct represents the block header
 type Header struct {
-	Version   uint32
-	PrevBlock types.Hash
-	Timestamp uint64
-	Height    uint32
-	Nonce     uint64
+	Version       uint32
+	PrevBlockHash types.Hash
+	Timestamp     uint64
+	Height        uint32
+	Nonce         uint64
+}
+
+// Bytes 方法返回区块头的二进制数据
+// Bytes method returns the binary data of the block header
+func (h *Header) Bytes() []byte {
+	buf := &bytes.Buffer{}
+	enc := gob.NewEncoder(buf)
+	enc.Encode(h)
+	return buf.Bytes()
 }
 
 // Block 结构体表示区块
@@ -41,10 +50,16 @@ func NewBlock(h *Header, txx []Transaction) *Block {
 	}
 }
 
+// AddTransaction 添加交易到区块
+// AddTransaction adds a transaction to the block
+func (b *Block) AddTransaction(tx *Transaction) {
+	b.Transaction = append(b.Transaction, *tx)
+}
+
 // Sign 方法使用私钥对区块头数据进行签名
 // Sign method signs the block header data using the private key
 func (b *Block) Sign(privateKey crypto.PrivateKey) error {
-	sig, err := privateKey.Sign(b.HeaderData())
+	sig, err := privateKey.Sign(b.Header.Bytes())
 	if err != nil {
 		return err
 	}
@@ -61,8 +76,14 @@ func (b *Block) Verify() error {
 		return fmt.Errorf("block has no signature")
 	}
 
-	if !b.Signature.Verify(b.Validator, b.HeaderData()) {
+	if !b.Signature.Verify(b.Validator, b.Header.Bytes()) {
 		return fmt.Errorf("block has invalid signature")
+	}
+
+	for _, tx := range b.Transaction {
+		if err := tx.Verify(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -82,19 +103,9 @@ func (b *Block) Encode(w io.Writer, enc Encoder[*Block]) error {
 
 // Hash 方法计算区块的哈希值
 // Hash method calculates the hash of the block
-func (b *Block) Hash(hasher Hasher[*Block]) types.Hash {
+func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
 	if b.hash.IsZero() {
-		b.hash = hasher.Hash(b)
+		b.hash = hasher.Hash(b.Header)
 	}
 	return b.hash
-}
-
-// HeaderData 方法返回区块头的二进制数据
-// HeaderData method returns the binary data of the block header
-func (b *Block) HeaderData() []byte {
-	buf := &bytes.Buffer{}
-	enc := gob.NewEncoder(buf)
-	enc.Encode(b.Header)
-
-	return buf.Bytes()
 }

@@ -36,6 +36,17 @@ func TestVerifyTransaction(t *testing.T) {
 	// 测试用其他私钥验证签名的情况
 	// Test verifying the signature with another private key
 	otherPrivateKey := crypto.GeneratePrivateKey()
-	tx.PublicKey = otherPrivateKey.PublicKey()
+	tx.From = otherPrivateKey.PublicKey()
 	assert.NotNil(t, tx.Verify())
+}
+
+// randomTxWithSignature 创建一个带签名的随机交易
+// randomTxWithSignature creates a random transaction with a signature
+func randomTxWithSignature(t *testing.T) *Transaction {
+	privateKey := crypto.GeneratePrivateKey()
+	tx := &Transaction{
+		Data: []byte("foo"),
+	}
+	assert.Nil(t, tx.Sign(privateKey))
+	return tx
 }
