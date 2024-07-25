@@ -38,19 +38,19 @@ func GeneratePrivateKey() PrivateKey {
 // PublicKey 方法返回与私钥对应的公钥
 // PublicKey method returns the public key corresponding to the private key
 func (k PrivateKey) PublicKey() PublicKey {
-	return PublicKey{key: &k.key.PublicKey}
+	return PublicKey{Key: &k.key.PublicKey}
 }
 
 // PublicKey 结构体表示一个公钥
 // PublicKey struct represents a public key
 type PublicKey struct {
-	key *ecdsa.PublicKey
+	Key *ecdsa.PublicKey
 }
 
 // ToSlice 方法将公钥转换为字节切片
 // ToSlice method converts the public key to a byte slice
 func (k PublicKey) ToSlice() []byte {
-	return elliptic.MarshalCompressed(k.key, k.key.X, k.key.Y)
+	return elliptic.MarshalCompressed(k.Key, k.Key.X, k.Key.Y)
 }
 
 // Address 方法生成与公钥对应的地址
@@ -63,11 +63,11 @@ func (k PublicKey) Address() types.Address {
 // Signature 结构体表示一个签名
 // Signature struct represents a signature
 type Signature struct {
-	r, s *big.Int
+	R, S *big.Int
 }
 
 // Verify 方法验证签名是否有效
 // Verify method verifies if the signature is valid
 func (sig Signature) Verify(publicKey PublicKey, data []byte) bool {
-	return ecdsa.Verify(publicKey.key, data, sig.r, sig.s)
+	return ecdsa.Verify(publicKey.Key, data, sig.R, sig.S)
 }

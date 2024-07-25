@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -38,6 +39,17 @@ func TestVerifyTransaction(t *testing.T) {
 	otherPrivateKey := crypto.GeneratePrivateKey()
 	tx.From = otherPrivateKey.PublicKey()
 	assert.NotNil(t, tx.Verify())
+}
+
+// TODO: Expected nil, but got: &errors.errorString{s:"gob: type not registered for interface: elliptic.p256Curve"}
+func TestTxEncodeDecode(t *testing.T) {
+	tx := randomTxWithSignature(t)
+	buf := &bytes.Buffer{}
+	assert.Nil(t, tx.Encode(NewGobTxEncoder(buf)))
+
+	txDecoded := new(Transaction)
+	assert.Nil(t, txDecoded.Decode(NewGobTxDecoder(buf)))
+	assert.Equal(t, tx, txDecoded)
 }
 
 // randomTxWithSignature 创建一个带签名的随机交易
