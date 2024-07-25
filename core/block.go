@@ -11,11 +11,11 @@ import (
 // Header 结构体表示区块头
 // Header struct represents the block header
 type Header struct {
-	Version       uint32
-	PrevBlockHash types.Hash
-	Timestamp     uint64
-	Height        uint32
-	Nonce         uint64
+	Version       uint32     // 区块版本号 // Block version number
+	PrevBlockHash types.Hash // 前一个区块的哈希值 // Hash of the previous block
+	Timestamp     uint64     // 区块生成的时间戳 // Timestamp when the block was created
+	Height        uint32     // 区块高度 // Block height
+	Nonce         uint64     // 随机数 // Nonce
 }
 
 // Bytes 方法返回区块头的二进制数据
@@ -23,17 +23,17 @@ type Header struct {
 func (h *Header) Bytes() []byte {
 	buf := &bytes.Buffer{}
 	enc := gob.NewEncoder(buf)
-	enc.Encode(h)
+	enc.Encode(h) // 将区块头编码为二进制数据 // Encode the block header into binary data
 	return buf.Bytes()
 }
 
 // Block 结构体表示区块
 // Block struct represents the block
 type Block struct {
-	*Header
-	Transaction []Transaction
-	Validator   crypto.PublicKey
-	Signature   *crypto.Signature
+	*Header                       // 区块头 // Block header
+	Transaction []Transaction     // 区块包含的交易列表 // List of transactions included in the block
+	Validator   crypto.PublicKey  // 验证者公钥 // Validator's public key
+	Signature   *crypto.Signature // 区块签名 // Block signature
 
 	// 缓存的区块头哈希
 	// Cached version of the header hash
@@ -58,11 +58,15 @@ func (b *Block) AddTransaction(tx *Transaction) {
 // Sign 方法使用私钥对区块头数据进行签名
 // Sign method signs the block header data using the private key
 func (b *Block) Sign(privateKey crypto.PrivateKey) error {
+	// 使用私钥对区块头进行签名
+	// Sign the block header using the private key
 	sig, err := privateKey.Sign(b.Header.Bytes())
 	if err != nil {
 		return err
 	}
 
+	// 设置验证者公钥和区块签名
+	// Set the validator's public key and block signature
 	b.Validator = privateKey.PublicKey()
 	b.Signature = sig
 	return nil
@@ -71,14 +75,20 @@ func (b *Block) Sign(privateKey crypto.PrivateKey) error {
 // Verify 方法验证区块签名的有效性
 // Verify method verifies the validity of the block signature
 func (b *Block) Verify() error {
+	// 如果签名为空，则返回错误
+	// Return an error if the signature is nil
 	if b.Signature == nil {
 		return fmt.Errorf("block has no signature")
 	}
 
+	// 验证签名，如果无效则返回错误
+	// Verify the signature, return an error if invalid
 	if !b.Signature.Verify(b.Validator, b.Header.Bytes()) {
 		return fmt.Errorf("block has invalid signature")
 	}
 
+	// 验证区块中的每个交易
+	// Verify each transaction in the block
 	for _, tx := range b.Transaction {
 		if err := tx.Verify(); err != nil {
 			return err
@@ -103,6 +113,8 @@ func (b *Block) Encode(enc Encoder[*Block]) error {
 // Hash 方法计算区块的哈希值
 // Hash method calculates the hash of the block
 func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
+	// 如果哈希值为空，则计算哈希值
+	// Compute the hash if it is zero
 	if b.hash.IsZero() {
 		b.hash = hasher.Hash(b.Header)
 	}

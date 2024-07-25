@@ -10,5 +10,6 @@ go-blockchain is a blockchain implementation in Golang.
 4. Implement transaction handling with signing and verification to ensure secure and valid transactions within the blockchain.
 5. Block signing and verification, blockchain structure and storage, and block addition and validation functionality in a blockchain system.
 6. Added validator, block validation, and transaction validation.
+7. Adding Mutex Locks & Expanding Transaction Pool with Tests
 
-TODO : 7. 添加互斥锁&Expected nil, but got: &errors.errorString{s:"gob: type not registered for interface: elliptic.p256Curve"}
+TODO: code => transaction_test.go => TestTxEncodeDecode => BUG(waiting for a solution)
