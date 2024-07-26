@@ -1,6 +1,7 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 )
@@ -18,7 +19,7 @@ type LocalTransport struct {
 // NewLocalTransport creates and returns a new LocalTransport instance
 func NewLocalTransport(addr NetAddr) Transport {
 	return &LocalTransport{
-		addr:       addr,
+		addr:       addr,                              // 设置传输节点的地址 // Set the address of the transport node
 		consumerCh: make(chan RPC, 1024),              // 创建一个带缓冲区的通道 // Create a buffered channel
 		peers:      make(map[NetAddr]*LocalTransport), // 初始化已连接节点的映射 // Initialize the map of connected nodes
 	}
@@ -33,7 +34,7 @@ func (t *LocalTransport) Consume() <-chan RPC {
 // Connect 方法连接两个传输节点
 // Connect method connects two transport nodes
 func (t *LocalTransport) Connect(tr Transport) error {
-	t.lock.Lock()
+	t.lock.Lock() // 加锁以确保线程安全 // Lock to ensure thread safety
 	defer t.lock.Unlock()
 
 	// 将另一个传输节点添加到 peers 映射中
@@ -45,7 +46,7 @@ func (t *LocalTransport) Connect(tr Transport) error {
 // SendMessage 方法发送消息到指定地址
 // SendMessage method sends a message to the specified address
 func (t *LocalTransport) SendMessage(to NetAddr, payLoad []byte) error {
-	t.lock.RLock()
+	t.lock.RLock() // 读锁以确保线程安全 // Read lock to ensure thread safety
 	defer t.lock.RUnlock()
 
 	// 查找目标地址的传输节点
@@ -59,14 +60,27 @@ func (t *LocalTransport) SendMessage(to NetAddr, payLoad []byte) error {
 	// Send the RPC message to the target node's consumerCh channel
 	peer.consumerCh <- RPC{
 		From:    t.addr,
-		Payload: payLoad,
+		Payload: bytes.NewReader(payLoad),
 	}
 
+	return nil
+}
+
+// Broadcast 方法将消息广播到所有已连接的传输节点
+// Broadcast method broadcasts a message to all connected transport nodes
+func (t *LocalTransport) Broadcast(payload []byte) error {
+	for _, peer := range t.peers {
+		if err := t.SendMessage(peer.Addr(), payload); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 // Addr 方法返回传输节点的地址
 // Addr method returns the address of the transport node
 func (t *LocalTransport) Addr() NetAddr {
+	// 返回传输节点的地址
+	// Return the address of the transport node
 	return t.addr
 }

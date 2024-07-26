@@ -1,6 +1,7 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/lonySp/go-blockchain/core"
 	"github.com/lonySp/go-blockchain/crypto"
@@ -13,9 +14,11 @@ var defaultBlockTime = 5 * time.Second
 // ServerOpts 结构体包含服务器的传输选项
 // ServerOpts struct contains server transport options
 type ServerOpts struct {
-	Transport  []Transport        // 传输选项 // Transport options
-	BlockTime  time.Duration      // 区块生成时间间隔 // Block creation time interval
-	PrivateKey *crypto.PrivateKey // 私钥，用于签名 // Private key for signing
+	RPCDecodeFunc RPCDecodeFunc      // RPC 解码函数 // RPC decode function
+	RPCProcessor  RPCProcessor       // RPC 处理器 // RPC processor
+	Transport     []Transport        // 传输选项 // Transport options
+	BlockTime     time.Duration      // 区块生成时间间隔 // Block creation time interval
+	PrivateKey    *crypto.PrivateKey // 私钥，用于签名 // Private key for signing
 }
 
 // Server 结构体表示服务器
@@ -35,14 +38,23 @@ func NewServer(opts ServerOpts) *Server {
 	if opts.BlockTime == time.Duration(0) {
 		opts.BlockTime = defaultBlockTime
 	}
-	return &Server{
+	if opts.RPCDecodeFunc == nil {
+		opts.RPCDecodeFunc = DefaultRPCDecodeFunc
+	}
+	s := &Server{
 		ServerOpts:  opts,
 		blockTime:   opts.BlockTime,
 		memPool:     NewTxPool(),
 		isValidator: opts.PrivateKey != nil,
-		quitCh:      make(chan struct{}),
+		quitCh:      make(chan struct{}, 1),
 		rpcCh:       make(chan RPC),
 	}
+	// 如果未提供 RPC 处理器，使用服务器本身作为默认处理器
+	// If no RPC processor is provided, use the server itself as the default processor
+	if s.RPCProcessor == nil {
+		s.RPCProcessor = s
+	}
+	return s
 }
 
 // Start 方法启动服务器
@@ -55,9 +67,18 @@ free:
 	for {
 		select {
 		case rpc := <-s.rpcCh:
-			// 处理接收到的 RPC 消息
-			// Handle received RPC messages
-			fmt.Printf("%+v\n", rpc)
+			// 解码 RPC 消息
+			// Decode the RPC message
+			msg, err := s.RPCDecodeFunc(rpc)
+			if err != nil {
+				logrus.Error(err)
+			}
+
+			// 处理解码后的消息
+			// Process the decoded message
+			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
+				logrus.Error(err)
+			}
 		case <-s.quitCh:
 			// 处理服务器关闭信号
 			// Handle server shutdown signal
@@ -73,9 +94,30 @@ free:
 	fmt.Println("Server shutdown")
 }
 
-// handleTransaction 方法处理接收到的交易
-// handleTransaction method handles received transactions
-func (s *Server) handleTransaction(tx *core.Transaction) error {
+// ProcessMessage 方法处理解码后的消息
+// ProcessMessage method processes the decoded message
+func (s *Server) ProcessMessage(msg *DecodedMessage) error {
+	switch t := msg.Data.(type) {
+	case *core.Transaction:
+		return s.ProcessTransaction(t)
+	}
+	return nil
+}
+
+// broadcast 方法将消息广播到所有已连接的传输节点
+// broadcast method broadcasts a message to all connected transport nodes
+func (s *Server) broadcast(payload []byte) error {
+	for _, tr := range s.Transport {
+		if err := tr.Broadcast(payload); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ProcessTransaction 方法处理交易
+// ProcessTransaction method processes a transaction
+func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 	// 验证交易
 	// Verify the transaction
 	if err := tx.Verify(); err != nil {
@@ -92,12 +134,34 @@ func (s *Server) handleTransaction(tx *core.Transaction) error {
 		return nil
 	}
 
+	if err := tx.Verify(); err != nil {
+		return err
+	}
+
+	tx.SetFirstSeen(time.Now().UnixNano())
+
 	// 添加新交易到交易池
 	// Add new transaction to the transaction pool
 	logrus.WithFields(logrus.Fields{
-		"hash": tx.Hash(core.TxHasher{}),
+		"hash":           tx.Hash(core.TxHasher{}),
+		"mempool length": s.memPool.Len(),
 	}).Info("adding new tx to the mempool")
+
+	go s.broadcastTx(tx)
+
 	return s.memPool.Add(tx)
+}
+
+// broadcastTx 方法广播交易
+// broadcastTx method broadcasts a transaction
+func (s *Server) broadcastTx(tx *core.Transaction) error {
+	buf := &bytes.Buffer{}
+	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+		return err
+	}
+
+	msg := NewMessage(MessageTypeTx, buf.Bytes())
+	return s.broadcast(msg.Bytes())
 }
 
 // createNewBlock 方法创建一个新块
