@@ -53,6 +53,12 @@ func (k PublicKey) ToSlice() []byte {
 	return elliptic.MarshalCompressed(k.Key, k.Key.X, k.Key.Y)
 }
 
+// PublicKeyFromBytes 方法从字节数组生成公钥
+func PublicKeyFromBytes(data []byte) PublicKey {
+	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), data)
+	return PublicKey{Key: &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}}
+}
+
 // Address 方法生成与公钥对应的地址
 // Address method generates the address corresponding to the public key
 func (k PublicKey) Address() types.Address {
@@ -70,4 +76,18 @@ type Signature struct {
 // Verify method verifies if the signature is valid
 func (sig Signature) Verify(publicKey PublicKey, data []byte) bool {
 	return ecdsa.Verify(publicKey.Key, data, sig.R, sig.S)
+}
+
+// SignatureFromBytes 方法从字节数组生成签名
+func SignatureFromBytes(data []byte) *Signature {
+	r := new(big.Int).SetBytes(data[:32])
+	s := new(big.Int).SetBytes(data[32:])
+	return &Signature{R: r, S: s}
+}
+
+// ToBytes 方法将签名转换为字节数组
+func (sig Signature) ToBytes() []byte {
+	rBytes := sig.R.Bytes()
+	sBytes := sig.S.Bytes()
+	return append(rBytes, sBytes...)
 }

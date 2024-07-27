@@ -37,7 +37,8 @@ func main() {
 
 	// 创建服务器选项并启动服务器
 	// Create server options and start the server
-	opts := network.ServerOpts{Transport: []network.Transport{trLocal}}
+	privateKey := crypto.GeneratePrivateKey()
+	opts := network.ServerOpts{PrivateKey: &privateKey, ID: "LOCAL", Transport: []network.Transport{trLocal}}
 	server := network.NewServer(opts)
 	server.Start()
 }
@@ -64,7 +65,7 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	// 创建缓冲区并编码交易
 	// Create a buffer and encode the transaction
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(core.NewProtobufTxEncoder(buf)); err != nil {
 		return err
 	}
 

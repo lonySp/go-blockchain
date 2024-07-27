@@ -25,9 +25,7 @@ func (h Hash) IsZero() bool {
 // ToSlice method converts the hash value to a byte slice
 func (h Hash) ToSlice() []byte {
 	b := make([]byte, 32)
-	for i := 0; i < 32; i++ {
-		b[i] = h[i]
-	}
+	copy(b, h[:])
 	return b
 }
 
@@ -46,10 +44,7 @@ func HashFromBytes(b []byte) Hash {
 	}
 
 	var value [32]uint8
-	for i := 0; i < 32; i++ {
-		value[i] = b[i]
-	}
-
+	copy(value[:], b)
 	return Hash(value)
 }
 
@@ -65,4 +60,9 @@ func RandomBytes(size int) []byte {
 // RandomHash function generates a random hash value
 func RandomHash() Hash {
 	return HashFromBytes(RandomBytes(32))
+}
+
+// BytesToHash 函数将字节数组转换为哈希值
+func BytesToHash(b []byte) Hash {
+	return HashFromBytes(b)
 }

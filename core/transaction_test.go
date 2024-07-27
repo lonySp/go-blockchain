@@ -1,7 +1,9 @@
 package core
 
 import (
+	"bytes"
 	"github.com/lonySp/go-blockchain/crypto"
+	"github.com/lonySp/go-blockchain/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -42,28 +44,27 @@ func TestVerifyTransaction(t *testing.T) {
 
 // TestTxEncodeDecode 测试交易的编码和解码
 // TestTxEncodeDecode tests the encoding and decoding of a transaction
-// TODO: bug
 func TestTxEncodeDecode(t *testing.T) {
-	//tx := randomTxWithSignature(t)
-	//buf := &bytes.Buffer{}
-	//
-	//// 编码交易
-	//// Encode the transaction
-	//assert.Nil(t, tx.Encode(NewGobTxEncoder(buf)))
-	//
-	//// 清空交易哈希
-	//// Clear the transaction hash
-	//tx.hash = types.Hash{}
-	//
-	//txDecoded := new(Transaction)
-	//
-	//// 解码交易
-	//// Decode the transaction
-	//assert.Nil(t, txDecoded.Decode(NewGobTxDecoder(buf)))
-	//
-	//// 验证解码后的交易与原交易相等
-	//// Verify that the decoded transaction is equal to the original transaction
-	//assert.Equal(t, tx, txDecoded)
+	tx := randomTxWithSignature(t)
+	buf := &bytes.Buffer{}
+
+	// 编码交易
+	// Encode the transaction
+	assert.Nil(t, tx.Encode(NewProtobufTxEncoder(buf)))
+
+	// 清空交易哈希
+	// Clear the transaction hash
+	tx.hash = types.Hash{}
+
+	txDecoded := new(Transaction)
+
+	// 解码交易
+	// Decode the transaction
+	assert.Nil(t, txDecoded.Decode(NewProtobufTxDecoder(buf)))
+
+	// 验证解码后的交易与原交易相等
+	// Verify that the decoded transaction is equal to the original transaction
+	assert.Equal(t, tx, txDecoded)
 }
 
 // randomTxWithSignature 创建一个带签名的随机交易

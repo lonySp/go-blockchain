@@ -1,7 +1,9 @@
 package core
 
 import (
-	"encoding/gob"
+	"github.com/golang/protobuf/proto"
+	"github.com/lonySp/go-blockchain/crypto"
+	"github.com/lonySp/go-blockchain/types"
 	"io"
 )
 
@@ -17,38 +19,63 @@ type Decoder[T any] interface {
 	Decode(T) error
 }
 
-// GobTxEncoder 结构体用于基于 gob 的交易编码
-// GobTxEncoder struct is used for gob-based transaction encoding
-type GobTxEncoder struct {
+// ProtobufTxEncoder 结构体用于基于 Protobuf 的交易编码
+// ProtobufTxEncoder struct is used for Protobuf-based transaction encoding
+type ProtobufTxEncoder struct {
 	w io.Writer // 用于写入编码数据的 io.Writer
 }
 
-// NewGobTxEncoder 函数创建一个新的 GobTxEncoder 实例
-// NewGobTxEncoder function creates a new instance of GobTxEncoder
-func NewGobTxEncoder(w io.Writer) *GobTxEncoder {
-	return &GobTxEncoder{w: w}
+// NewProtobufTxEncoder 函数创建一个新的 ProtobufTxEncoder 实例
+// NewProtobufTxEncoder function creates a new instance of ProtobufTxEncoder
+func NewProtobufTxEncoder(w io.Writer) *ProtobufTxEncoder {
+	return &ProtobufTxEncoder{w: w}
 }
 
 // Encode 方法将交易数据编码为字节流
 // Encode method encodes transaction data into a byte stream
-func (enc *GobTxEncoder) Encode(tx *Transaction) error {
-	return gob.NewEncoder(enc.w).Encode(tx)
+func (enc *ProtobufTxEncoder) Encode(tx *Transaction) error {
+	pbTx := &ProtoTransaction{
+		Data:      tx.Data,
+		From:      tx.From.ToSlice(),
+		Signature: tx.Signature.ToBytes(),
+		Hash:      tx.hash.ToSlice(),
+		FirstSeen: tx.firstSeen,
+	}
+	data, err := proto.Marshal(pbTx)
+	if err != nil {
+		return err
+	}
+	_, err = enc.w.Write(data)
+	return err
 }
 
-// GobTxDecoder 结构体用于基于 gob 的交易解码
-// GobTxDecoder struct is used for gob-based transaction decoding
-type GobTxDecoder struct {
+// ProtobufTxDecoder 结构体用于基于 Protobuf 的交易解码
+// ProtobufTxDecoder struct is used for Protobuf-based transaction decoding
+type ProtobufTxDecoder struct {
 	r io.Reader // 用于读取编码数据的 io.Reader
 }
 
-// NewGobTxDecoder 函数创建一个新的 GobTxDecoder 实例
-// NewGobTxDecoder function creates a new instance of GobTxDecoder
-func NewGobTxDecoder(r io.Reader) *GobTxDecoder {
-	return &GobTxDecoder{r: r}
+// NewProtobufTxDecoder 函数创建一个新的 ProtobufTxDecoder 实例
+// NewProtobufTxDecoder function creates a new instance of ProtobufTxDecoder
+func NewProtobufTxDecoder(r io.Reader) *ProtobufTxDecoder {
+	return &ProtobufTxDecoder{r: r}
 }
 
 // Decode 方法从字节流解码交易数据
 // Decode method decodes transaction data from a byte stream
-func (dec *GobTxDecoder) Decode(tx *Transaction) error {
-	return gob.NewDecoder(dec.r).Decode(tx)
+func (dec *ProtobufTxDecoder) Decode(tx *Transaction) error {
+	data, err := io.ReadAll(dec.r)
+	if err != nil {
+		return err
+	}
+	pbTx := &ProtoTransaction{}
+	if err := proto.Unmarshal(data, pbTx); err != nil {
+		return err
+	}
+	tx.Data = pbTx.Data
+	tx.From = crypto.PublicKeyFromBytes(pbTx.From)
+	tx.Signature = crypto.SignatureFromBytes(pbTx.Signature)
+	tx.hash = types.BytesToHash(pbTx.Hash)
+	tx.firstSeen = pbTx.FirstSeen
+	return nil
 }

@@ -3,9 +3,11 @@ package network
 import (
 	"bytes"
 	"fmt"
+	"github.com/go-kit/log"
 	"github.com/lonySp/go-blockchain/core"
 	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
@@ -14,6 +16,8 @@ var defaultBlockTime = 5 * time.Second
 // ServerOpts 结构体包含服务器的传输选项
 // ServerOpts struct contains server transport options
 type ServerOpts struct {
+	ID            string
+	Logger        log.Logger
 	RPCDecodeFunc RPCDecodeFunc      // RPC 解码函数 // RPC decode function
 	RPCProcessor  RPCProcessor       // RPC 处理器 // RPC processor
 	Transport     []Transport        // 传输选项 // Transport options
@@ -41,6 +45,10 @@ func NewServer(opts ServerOpts) *Server {
 	if opts.RPCDecodeFunc == nil {
 		opts.RPCDecodeFunc = DefaultRPCDecodeFunc
 	}
+	if opts.Logger == nil {
+		opts.Logger = log.NewLogfmtLogger(os.Stderr)
+		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
+	}
 	s := &Server{
 		ServerOpts:  opts,
 		blockTime:   opts.BlockTime,
@@ -54,6 +62,10 @@ func NewServer(opts ServerOpts) *Server {
 	if s.RPCProcessor == nil {
 		s.RPCProcessor = s
 	}
+
+	if s.isValidator {
+		go s.validatorLoop()
+	}
 	return s
 }
 
@@ -61,8 +73,6 @@ func NewServer(opts ServerOpts) *Server {
 // Start method starts the server
 func (s *Server) Start() {
 	s.initTransport()
-	ticker := time.NewTicker(s.blockTime)
-
 free:
 	for {
 		select {
@@ -71,27 +81,30 @@ free:
 			// Decode the RPC message
 			msg, err := s.RPCDecodeFunc(rpc)
 			if err != nil {
-				logrus.Error(err)
+				logrus.Error("Error", err)
 			}
 
 			// 处理解码后的消息
 			// Process the decoded message
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
-				logrus.Error(err)
+				logrus.Error("Error", err)
 			}
 		case <-s.quitCh:
 			// 处理服务器关闭信号
 			// Handle server shutdown signal
 			break free
-		case <-ticker.C:
-			// 如果是验证者，则创建新块
-			// If the server is a validator, create a new block
-			if s.isValidator {
-				fmt.Println("creating new block")
-			}
 		}
 	}
-	fmt.Println("Server shutdown")
+	s.Logger.Log("msg", "Server is shutting down")
+}
+
+func (s *Server) validatorLoop() {
+	ticker := time.NewTicker(s.BlockTime)
+	s.Logger.Log("msg", "Starting validator loop", "blockTime", s.BlockTime)
+	for {
+		<-ticker.C
+		s.createNewBlock()
+	}
 }
 
 // ProcessMessage 方法处理解码后的消息
@@ -99,7 +112,7 @@ free:
 func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	switch t := msg.Data.(type) {
 	case *core.Transaction:
-		return s.ProcessTransaction(t)
+		return s.processTransaction(t)
 	}
 	return nil
 }
@@ -117,20 +130,10 @@ func (s *Server) broadcast(payload []byte) error {
 
 // ProcessTransaction 方法处理交易
 // ProcessTransaction method processes a transaction
-func (s *Server) ProcessTransaction(tx *core.Transaction) error {
-	// 验证交易
-	// Verify the transaction
-	if err := tx.Verify(); err != nil {
-		return err
-	}
-
+func (s *Server) processTransaction(tx *core.Transaction) error {
 	hash := tx.Hash(core.TxHasher{})
-	// 检查交易池中是否已有该交易
-	// Check if the transaction is already in the transaction pool
+
 	if s.memPool.Has(hash) {
-		logrus.WithFields(logrus.Fields{
-			"hash": tx.Hash(core.TxHasher{}),
-		}).Info("transaction already in mempool")
 		return nil
 	}
 
@@ -140,12 +143,10 @@ func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 
 	tx.SetFirstSeen(time.Now().UnixNano())
 
-	// 添加新交易到交易池
-	// Add new transaction to the transaction pool
-	logrus.WithFields(logrus.Fields{
-		"hash":           tx.Hash(core.TxHasher{}),
-		"mempool length": s.memPool.Len(),
-	}).Info("adding new tx to the mempool")
+	s.Logger.Log(
+		"msg", "adding new tx to mempool",
+		"hash", hash,
+		"mempoolLength", s.memPool.Len())
 
 	go s.broadcastTx(tx)
 
@@ -156,7 +157,7 @@ func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 // broadcastTx method broadcasts a transaction
 func (s *Server) broadcastTx(tx *core.Transaction) error {
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(core.NewProtobufTxEncoder(buf)); err != nil {
 		return err
 	}
 

@@ -76,7 +76,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 	switch msg.Header {
 	case MessageTypeTx:
 		tx := new(core.Transaction)
-		if err := tx.Decode(core.NewGobTxDecoder(bytes.NewReader(msg.Data))); err != nil {
+		if err := tx.Decode(core.NewProtobufTxDecoder(bytes.NewReader(msg.Data))); err != nil {
 			return nil, err
 		}
 
