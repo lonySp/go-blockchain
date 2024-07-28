@@ -1,8 +1,7 @@
-package network
+package types
 
 import (
 	"fmt"
-	"github.com/lonySp/go-blockchain/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,14 +10,14 @@ import (
 // TestNewList 测试创建新列表
 // TestNewList tests creating a new list
 func TestNewList(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	assert.Equal(t, l.Data, []int{})
 }
 
 // TestListClear 测试清空列表
 // TestListClear tests clearing the list
 func TestListClear(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -33,7 +32,7 @@ func TestListClear(t *testing.T) {
 // TestListContains 测试列表是否包含特定元素
 // TestListContains tests if the list contains a specific element
 func TestListContains(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -45,7 +44,7 @@ func TestListContains(t *testing.T) {
 // TestListGetIndex 测试获取元素索引
 // TestListGetIndex tests getting the index of an element
 func TestListGetIndex(t *testing.T) {
-	l := types.NewList[string]()
+	l := NewList[string]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -60,7 +59,7 @@ func TestListGetIndex(t *testing.T) {
 // TestListRemove 测试从列表中移除元素
 // TestListRemove tests removing an element from the list
 func TestListRemove(t *testing.T) {
-	l := types.NewList[string]()
+	l := NewList[string]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -76,7 +75,7 @@ func TestListRemove(t *testing.T) {
 // TestListGet 测试获取元素
 // TestListGet tests getting an element from the list
 func TestListGet(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -89,7 +88,7 @@ func TestListGet(t *testing.T) {
 // TestRemoveAt 测试按索引移除元素
 // TestRemoveAt tests removing an element at a specific index
 func TestRemoveAt(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	l.Insert(1)
 	l.Insert(2)
 	l.Insert(3)
@@ -102,7 +101,7 @@ func TestRemoveAt(t *testing.T) {
 // TestListAdd 测试添加元素到列表
 // TestListAdd tests adding elements to the list
 func TestListAdd(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	n := 100
 
 	for i := 0; i < n; i++ {
@@ -115,7 +114,7 @@ func TestListAdd(t *testing.T) {
 // TestListLast 测试获取列表的最后一个元素
 // TestListLast tests getting the last element of the list
 func TestListLast(t *testing.T) {
-	l := types.NewList[int]()
+	l := NewList[int]()
 	l.Insert(1)
 	l.Insert(2)
 	l.Insert(3)

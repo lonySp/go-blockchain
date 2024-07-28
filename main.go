@@ -45,6 +45,18 @@ func main() {
 		}
 	}()
 
+	// 延迟连接新的远程节点
+	// Delay connection of a new remote node
+	go func() {
+		time.Sleep(7 * time.Second)
+
+		trLate := network.NewLocalTransport("LATE_REMOTE")
+		trRemoteC.Connect(trLate)
+		lateServer := makeServer("LATE_REMOTE", trLate, nil)
+
+		go lateServer.Start()
+	}()
+
 	// 创建服务器选项并启动服务器
 	// Create server options and start the server
 	privateKey := crypto.GeneratePrivateKey()

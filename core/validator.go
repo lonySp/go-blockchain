@@ -32,7 +32,7 @@ func (v *BlockValidator) ValidateBlock(b *Block) error {
 	// 检查区块的高度是否是当前区块链高度的下一个高度
 	// Check if the block height is the next height of the current blockchain height
 	if b.Height != v.bc.Height()+1 {
-		return fmt.Errorf("block (%s) too high", b.Hash(BlockHasher{}))
+		return fmt.Errorf("block (%s) with height (%d) is too high => current height(%d)", b.Hash(BlockHasher{}), b.Height, v.bc.Height())
 	}
 
 	// 获取前一个区块头

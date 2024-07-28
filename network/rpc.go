@@ -15,7 +15,7 @@ type MessageType byte
 
 const (
 	MessageTypeTx    MessageType = 0x1 // 交易消息类型 // Transaction message type
-	MessageTypeBlock                   // 区块消息类型 // Block message type
+	MessageTypeBlock MessageType = 0x2 // 区块消息类型 // Block message type
 )
 
 // RPC 结构体表示一个远程过程调用
@@ -79,10 +79,18 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 		if err := tx.Decode(core.NewProtobufTxDecoder(bytes.NewReader(msg.Data))); err != nil {
 			return nil, err
 		}
-
 		return &DecodedMessage{
 			From: rpc.From,
 			Data: tx,
+		}, nil
+	case MessageTypeBlock:
+		block := new(core.Block)
+		if err := block.Decode(core.NewProtobufBlockDecoder(bytes.NewReader(msg.Data))); err != nil {
+			return nil, err
+		}
+		return &DecodedMessage{
+			From: rpc.From,
+			Data: block,
 		}, nil
 	default:
 		return nil, fmt.Errorf("invalid message type %x", msg.Header)

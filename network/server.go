@@ -63,7 +63,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	s := &Server{
 		ServerOpts:  opts,
 		chain:       chain,
-		memPool:     NewTxPool(),
+		memPool:     NewTxPool(1000),
 		isValidator: opts.PrivateKey != nil,
 		quitCh:      make(chan struct{}, 1),
 		rpcCh:       make(chan RPC),
@@ -127,6 +127,8 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 	switch t := msg.Data.(type) {
 	case *core.Transaction:
 		return s.processTransaction(t)
+	case *core.Block:
+		return s.processBlock(t)
 	}
 	return nil
 }
@@ -142,6 +144,16 @@ func (s *Server) broadcast(payload []byte) error {
 	return nil
 }
 
+// processBlock 方法处理区块
+// processBlock method processes a block
+func (s *Server) processBlock(b *core.Block) error {
+	if err := s.chain.AddBlock(b); err != nil {
+		return err
+	}
+	go s.broadcastBlock(b)
+	return nil
+}
+
 // processTransaction 方法处理交易
 // processTransaction method processes a transaction
 func (s *Server) processTransaction(tx *core.Transaction) error {
@@ -149,7 +161,7 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 	hash := tx.Hash(core.TxHasher{})
 
 	// 如果交易池中已经有该交易，则返回 // Return if the transaction already exists in the transaction pool
-	if s.memPool.Has(hash) {
+	if s.memPool.Contains(hash) {
 		return nil
 	}
 
@@ -158,25 +170,29 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 		return err
 	}
 
-	// 设置交易的首次见证时间 // Set the transaction's first seen time
-	tx.SetFirstSeen(time.Now().UnixNano())
-
 	// 记录日志 // Log the transaction addition to the mempool
-	s.Logger.Log(
-		"msg", "adding new tx to mempool",
-		"hash", hash,
-		"mempoolLength", s.memPool.Len())
+	// s.Logger.Log(
+	//	"msg", "adding new tx to mempool",
+	//	"hash", hash,
+	//	"mempoolLength", s.memPool.PendingCount())
 
 	// 广播交易 // Broadcast the transaction
 	go s.broadcastTx(tx)
 
-	// 将交易添加到交易池 // Add the transaction to the transaction pool
-	return s.memPool.Add(tx)
-}
-
-func (s *Server) broadcastBlock(b *core.Block) error {
+	s.memPool.Add(tx)
 
 	return nil
+}
+
+// broadcastBlock 方法广播区块
+// broadcastBlock method broadcasts a block
+func (s *Server) broadcastBlock(b *core.Block) error {
+	buf := &bytes.Buffer{}
+	if err := b.Encode(core.NewProtobufBlockEncoder(buf)); err != nil {
+		return err
+	}
+	msg := NewMessage(MessageTypeBlock, buf.Bytes())
+	return s.broadcast(msg.Bytes())
 }
 
 // broadcastTx 方法广播交易
@@ -195,35 +211,47 @@ func (s *Server) broadcastTx(tx *core.Transaction) error {
 // createNewBlock 方法创建一个新块
 // createNewBlock method creates a new block
 func (s *Server) createNewBlock() error {
-	// 获取当前区块头 // Get the current block header
+	// 获取当前区块头
+	// Get the current block header
 	currentHeader, err := s.chain.GetHeader(s.chain.Height())
 	if err != nil {
 		return err
 	}
 
-	// For now we are going to use all transactions that are in the mempool
-	// Later on when we konw the internal structure of our transaction
-	// we will implement some kind of complexity function to determine how
-	// many transactions can be included in a block.
-	txx := s.memPool.Transactions()
+	// 目前我们将使用所有在交易池中的交易
+	// For now, we are going to use all transactions that are in the mempool
+	// 后续我们了解交易的内部结构后
+	// Later on, when we know the internal structure of our transaction
+	// 我们将实现某种复杂度函数来确定一个区块中可以包含多少交易
+	// We will implement some kind of complexity function to determine how many transactions can be included in a block.
+	txx := s.memPool.Pending()
 
-	// 创建新的区块 // Create a new block
+	// 创建新的区块
+	// Create a new block
 	block, err := core.NewBlockFromPrevHeader(currentHeader, txx)
 	if err != nil {
 		return err
 	}
 
-	// 使用私钥签名区块 // Sign the block with the private key
+	// 使用私钥签名区块
+	// Sign the block with the private key
 	if err := block.Sign(*s.PrivateKey); err != nil {
 		return err
 	}
 
-	// 将区块添加到区块链 // Add the block to the blockchain
+	// 将区块添加到区块链
+	// Add the block to the blockchain
 	if err := s.chain.AddBlock(block); err != nil {
 		return err
 	}
 
-	s.memPool.Flush()
+	// 清除已包含在区块中的待处理交易
+	// Clear pending transactions that have been included in the block
+	s.memPool.ClearPending()
+
+	// 异步广播新创建的区块
+	// Asynchronously broadcast the newly created block
+	go s.broadcastBlock(block)
 
 	return nil
 }
@@ -245,10 +273,10 @@ func (s *Server) initTransport() {
 // genesisBlock creates and returns the genesis block
 func genesisBlock() *core.Block {
 	header := &core.Header{
-		Version:   1,
-		Height:    0,
-		Timestamp: 000000,
-		DataHash:  types.Hash{},
+		Version:   1,            // 区块版本号 // Block version number
+		Height:    0,            // 区块高度 // Block height
+		Timestamp: 000000,       // 区块生成的时间戳 // Timestamp when the block was created
+		DataHash:  types.Hash{}, // 区块数据哈希值 // Hash of the block data
 	}
 
 	// 创建并返回创世区块 // Create and return the genesis block

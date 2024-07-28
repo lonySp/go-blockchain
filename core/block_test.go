@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/lonySp/go-blockchain/types"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,22 @@ func TestSignBlock(t *testing.T) {
 	// 测试区块签名 // Test the block signing
 	assert.Nil(t, b.Sign(privateKey)) // 验证签名操作是否成功 // Verify if the signing operation is successful
 	assert.NotNil(t, b.Signature)     // 验证签名是否存在 // Verify if the signature is present
+}
+
+// TestDecodeEncodeBlock 测试区块的编码和解码功能
+// TestDecodeEncodeBlock tests the block encoding and decoding functionality
+func TestDecodeEncodeBlock(t *testing.T) {
+	// 创建一个随机区块 // Create a random block
+	b := randomBlock(t, 1, types.Hash{})
+	buf := &bytes.Buffer{}
+	// 编码区块 // Encode the block
+	assert.Nil(t, NewProtobufBlockEncoder(buf).Encode(b))
+
+	bDecode := new(Block)
+	// 解码区块 // Decode the block
+	assert.Nil(t, NewProtobufBlockDecoder(buf).Decode(bDecode))
+	// 验证编码和解码后的区块是否相等 // Verify if the encoded and decoded blocks are equal
+	assert.Equal(t, b, bDecode)
 }
 
 // TestVerifyBlock 测试区块签名验证功能
