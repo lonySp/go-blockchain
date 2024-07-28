@@ -8,8 +8,6 @@ import (
 	"github.com/lonySp/go-blockchain/network"
 	"github.com/sirupsen/logrus"
 	"log"
-	"math/rand"
-	"strconv"
 	"time"
 )
 
@@ -94,7 +92,9 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 
 	// 创建交易数据
 	// Create transaction data
-	data := []byte(strconv.FormatInt(int64(rand.Intn(1000)), 10))
+	// data := []byte(strconv.FormatInt(int64(rand.Intn(1000)), 10))
+
+	data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
 
 	// 创建新交易
 	// Create a new transaction
