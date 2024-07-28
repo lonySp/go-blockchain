@@ -47,13 +47,14 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 		return err
 	}
 
+	// 执行每个交易的数据代码 // Execute the code for each transaction's data
 	for _, tx := range b.Transactions {
 		bc.logger.Log("msg", "executing code", "len", len(tx.Data), "hash", tx.Hash(&TxHasher{}))
-		vm := NewVM(tx.Data)
-		if err := vm.Run(); err != nil {
+		vm := NewVM(tx.Data)             // 创建虚拟机实例 // Create a VM instance
+		if err := vm.Run(); err != nil { // 运行虚拟机 // Run the VM
 			return err
 		}
-		bc.logger.Log("vm result", vm.stack[vm.sp])
+		bc.logger.Log("vm result", vm.stack.data[vm.stack.sp]) // 记录虚拟机结果 // Log the VM result
 	}
 
 	// 添加未验证的区块 // Add the block without validation
