@@ -56,7 +56,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	}
 
 	// 创建区块链实例 // Create blockchain instance
-	chain, err := core.NewBlockchain(genesisBlock())
+	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +174,11 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 	return s.memPool.Add(tx)
 }
 
+func (s *Server) broadcastBlock(b *core.Block) error {
+
+	return nil
+}
+
 // broadcastTx 方法广播交易
 // broadcastTx method broadcasts a transaction
 func (s *Server) broadcastTx(tx *core.Transaction) error {
@@ -196,8 +201,14 @@ func (s *Server) createNewBlock() error {
 		return err
 	}
 
+	// For now we are going to use all transactions that are in the mempool
+	// Later on when we konw the internal structure of our transaction
+	// we will implement some kind of complexity function to determine how
+	// many transactions can be included in a block.
+	txx := s.memPool.Transactions()
+
 	// 创建新的区块 // Create a new block
-	block, err := core.NewBlockFromPrevHeader(currentHeader, nil)
+	block, err := core.NewBlockFromPrevHeader(currentHeader, txx)
 	if err != nil {
 		return err
 	}
@@ -211,6 +222,9 @@ func (s *Server) createNewBlock() error {
 	if err := s.chain.AddBlock(block); err != nil {
 		return err
 	}
+
+	s.memPool.Flush()
+
 	return nil
 }
 
@@ -233,7 +247,7 @@ func genesisBlock() *core.Block {
 	header := &core.Header{
 		Version:   1,
 		Height:    0,
-		Timestamp: uint64(time.Now().UnixNano()),
+		Timestamp: 000000,
 		DataHash:  types.Hash{},
 	}
 

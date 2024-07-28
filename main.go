@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/lonySp/go-blockchain/core"
 	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/lonySp/go-blockchain/network"
@@ -16,12 +17,20 @@ func main() {
 	// 创建本地和远程传输节点
 	// Create local and remote transport nodes
 	trLocal := network.NewLocalTransport("LOCAL")
-	trRemote := network.NewLocalTransport("REMOTE")
+	trRemoteA := network.NewLocalTransport("REMOTE_A")
+	trRemoteB := network.NewLocalTransport("REMOTE_B")
+	trRemoteC := network.NewLocalTransport("REMOTE_C")
 
 	// 连接本地和远程传输节点
 	// Connect local and remote transport nodes
-	trLocal.Connect(trRemote)
-	trRemote.Connect(trLocal)
+	trLocal.Connect(trRemoteA)
+	trRemoteA.Connect(trRemoteB)
+	trRemoteB.Connect(trRemoteC)
+	trRemoteA.Connect(trLocal)
+
+	// 初始化远程服务器
+	// Initialize remote servers
+	initRemoteServers([]network.Transport{trRemoteA, trRemoteB, trRemoteC})
 
 	// 启动一个 goroutine 每秒发送一笔交易
 	// Start a goroutine to send a transaction every second
@@ -29,22 +38,39 @@ func main() {
 		for {
 			// 发送交易到本地传输节点
 			// Send transaction to the local transport node
-			if err := sendTransaction(trRemote, trLocal.Addr()); err != nil {
+			if err := sendTransaction(trRemoteA, trLocal.Addr()); err != nil {
 				logrus.Error(err)
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}()
 
 	// 创建服务器选项并启动服务器
 	// Create server options and start the server
 	privateKey := crypto.GeneratePrivateKey()
-	opts := network.ServerOpts{PrivateKey: &privateKey, ID: "LOCAL", Transport: []network.Transport{trLocal}}
-	server, err := network.NewServer(opts)
+	localServer := makeServer("LOCAL", trLocal, &privateKey)
+	localServer.Start()
+}
+
+// initRemoteServers 初始化远程服务器
+// initRemoteServers initializes remote servers
+func initRemoteServers(trs []network.Transport) {
+	for i := 0; i < len(trs); i++ {
+		id := fmt.Sprintf("REMOTE_%d", i)
+		s := makeServer(id, trs[i], nil)
+		go s.Start()
+	}
+}
+
+// makeServer 创建并返回一个新的服务器实例
+// makeServer creates and returns a new server instance
+func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network.Server {
+	opts := network.ServerOpts{PrivateKey: pk, ID: id, Transport: []network.Transport{tr}}
+	s, err := network.NewServer(opts)
 	if err != nil {
 		log.Fatal(err)
 	}
-	server.Start()
+	return s
 }
 
 // sendTransaction 函数生成并发送一笔交易

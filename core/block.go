@@ -33,7 +33,7 @@ func (h *Header) Bytes() []byte {
 // Block struct represents the block
 type Block struct {
 	*Header                        // 区块头 // Block header
-	Transactions []Transaction     // 区块包含的交易列表 // List of transactions included in the block
+	Transactions []*Transaction    // 区块包含的交易列表 // List of transactions included in the block
 	Validator    crypto.PublicKey  // 验证者公钥 // Validator's public key
 	Signature    *crypto.Signature // 区块签名 // Block signature
 
@@ -43,7 +43,7 @@ type Block struct {
 
 // NewBlock 创建一个新的区块
 // NewBlock creates a new block
-func NewBlock(h *Header, txx []Transaction) (*Block, error) {
+func NewBlock(h *Header, txx []*Transaction) (*Block, error) {
 	return &Block{
 		Header:       h,
 		Transactions: txx,
@@ -52,7 +52,7 @@ func NewBlock(h *Header, txx []Transaction) (*Block, error) {
 
 // NewBlockFromPrevHeader 基于前一个区块头创建一个新的区块
 // NewBlockFromPrevHeader creates a new block based on the previous block header
-func NewBlockFromPrevHeader(prevHeader *Header, txx []Transaction) (*Block, error) {
+func NewBlockFromPrevHeader(prevHeader *Header, txx []*Transaction) (*Block, error) {
 	// 计算数据哈希 // Calculate data hash
 	dataHash, err := CalculateDataHash(txx)
 	if err != nil {
@@ -73,7 +73,7 @@ func NewBlockFromPrevHeader(prevHeader *Header, txx []Transaction) (*Block, erro
 // AddTransaction 添加交易到区块
 // AddTransaction adds a transaction to the block
 func (b *Block) AddTransaction(tx *Transaction) {
-	b.Transactions = append(b.Transactions, *tx)
+	b.Transactions = append(b.Transactions, tx)
 }
 
 // Sign 方法使用私钥对区块头数据进行签名
@@ -147,7 +147,7 @@ func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {
 
 // CalculateDataHash 计算交易列表的数据哈希值
 // CalculateDataHash calculates the data hash of the transaction list
-func CalculateDataHash(txx []Transaction) (hash types.Hash, err error) {
+func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 	// 创建一个字节缓冲区 // Create a byte buffer
 	buf := &bytes.Buffer{}
 	// 将每个交易编码为二进制数据并写入缓冲区 // Encode each transaction into binary data and write to the buffer

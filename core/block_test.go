@@ -63,7 +63,7 @@ func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 	}
 
 	// 创建区块并返回 // Create and return the block
-	b, err := NewBlock(header, []Transaction{tx})
+	b, err := NewBlock(header, []*Transaction{tx})
 	assert.Nil(t, err) // 验证区块创建是否成功 // Verify if the block creation is successful
 
 	// 计算并设置区块数据哈希 // Calculate and set the block data hash

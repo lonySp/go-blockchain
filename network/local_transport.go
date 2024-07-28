@@ -53,7 +53,7 @@ func (t *LocalTransport) SendMessage(to NetAddr, payLoad []byte) error {
 	// Find the transport node for the target address
 	peer, ok := t.peers[to]
 	if !ok {
-		return fmt.Errorf("%s: could not message to %s", t.addr, to)
+		return fmt.Errorf("%s: could not message to unknown peer %s", t.addr, to)
 	}
 
 	// 发送 RPC 消息到目标节点的 consumerCh 通道

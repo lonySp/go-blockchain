@@ -25,11 +25,11 @@ type ProtoTxHeader struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Version       uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	PrevBlockHash []byte `protobuf:"bytes,2,opt,name=prevBlockHash,proto3" json:"prevBlockHash,omitempty"`
-	Timestamp     uint64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Height        uint32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
-	Nonce         uint64 `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Version       uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`            // 交易版本号
+	PrevBlockHash []byte `protobuf:"bytes,2,opt,name=prevBlockHash,proto3" json:"prevBlockHash,omitempty"` // 前一个区块的哈希值
+	Timestamp     uint64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`        // 交易生成的时间戳
+	Height        uint32 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`              // 区块高度
+	Nonce         uint64 `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`                // 随机数（用于 PoW 等共识算法）
 }
 
 func (x *ProtoTxHeader) Reset() {
@@ -104,12 +104,12 @@ type ProtoTransaction struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data      []byte         `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	From      []byte         `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
-	Signature []byte         `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
-	Hash      []byte         `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
-	FirstSeen int64          `protobuf:"varint,5,opt,name=firstSeen,proto3" json:"firstSeen,omitempty"`
-	Header    *ProtoTxHeader `protobuf:"bytes,6,opt,name=header,proto3" json:"header,omitempty"`
+	Data      []byte         `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`            // 交易数据
+	From      []byte         `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`            // 发送方公钥
+	Signature []byte         `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`  // 交易签名
+	Hash      []byte         `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`            // 交易哈希
+	FirstSeen int64          `protobuf:"varint,5,opt,name=firstSeen,proto3" json:"firstSeen,omitempty"` // 首次见到该交易的时间戳
+	Header    *ProtoTxHeader `protobuf:"bytes,6,opt,name=header,proto3" json:"header,omitempty"`        // 交易头
 }
 
 func (x *ProtoTransaction) Reset() {
@@ -191,11 +191,11 @@ type ProtoBlockHeader struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Version       uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	DataHash      []byte `protobuf:"bytes,2,opt,name=dataHash,proto3" json:"dataHash,omitempty"`
-	PrevBlockHash []byte `protobuf:"bytes,3,opt,name=prevBlockHash,proto3" json:"prevBlockHash,omitempty"`
-	Timestamp     uint64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Height        uint32 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
+	Version       uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`            // 区块版本号
+	DataHash      []byte `protobuf:"bytes,2,opt,name=dataHash,proto3" json:"dataHash,omitempty"`           // 区块数据哈希值
+	PrevBlockHash []byte `protobuf:"bytes,3,opt,name=prevBlockHash,proto3" json:"prevBlockHash,omitempty"` // 前一个区块的哈希值
+	Timestamp     uint64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`        // 区块生成的时间戳
+	Height        uint32 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`              // 区块高度
 }
 
 func (x *ProtoBlockHeader) Reset() {
@@ -270,11 +270,11 @@ type ProtoBlock struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Header       *ProtoBlockHeader   `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
-	Transactions []*ProtoTransaction `protobuf:"bytes,2,rep,name=transactions,proto3" json:"transactions,omitempty"`
-	Validator    []byte              `protobuf:"bytes,3,opt,name=validator,proto3" json:"validator,omitempty"`
-	Signature    []byte              `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
-	Hash         []byte              `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
+	Header       *ProtoBlockHeader   `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`             // 区块头
+	Transactions []*ProtoTransaction `protobuf:"bytes,2,rep,name=transactions,proto3" json:"transactions,omitempty"` // 区块包含的交易列表
+	Validator    []byte              `protobuf:"bytes,3,opt,name=validator,proto3" json:"validator,omitempty"`       // 验证者公钥
+	Signature    []byte              `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`       // 区块签名
+	Hash         []byte              `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`                 // 区块哈希
 }
 
 func (x *ProtoBlock) Reset() {

@@ -5,34 +5,34 @@ package core;
 option go_package = "github.com/lonySp/go-blockchain/core";
 
 message ProtoTxHeader {
-  uint32 version = 1;
-  bytes prevBlockHash = 2;
-  uint64 timestamp = 3;
-  uint32 height = 4;
-  uint64 nonce = 5;
+  uint32 version = 1;             // 交易版本号
+  bytes prevBlockHash = 2;        // 前一个区块的哈希值
+  uint64 timestamp = 3;           // 交易生成的时间戳
+  uint32 height = 4;              // 区块高度
+  uint64 nonce = 5;               // 随机数（用于 PoW 等共识算法）
 }
 
 message ProtoTransaction {
-  bytes data = 1;
-  bytes from = 2;
-  bytes signature = 3;
-  bytes hash = 4;
-  int64 firstSeen = 5;
-  ProtoTxHeader header = 6;
+  bytes data = 1;                 // 交易数据
+  bytes from = 2;                 // 发送方公钥
+  bytes signature = 3;            // 交易签名
+  bytes hash = 4;                 // 交易哈希
+  int64 firstSeen = 5;            // 首次见到该交易的时间戳
+  ProtoTxHeader header = 6;       // 交易头
 }
 
 message ProtoBlockHeader {
-  uint32 version = 1;
-  bytes dataHash = 2;
-  bytes prevBlockHash = 3;
-  uint64 timestamp = 4;
-  uint32 height = 5;
+  uint32 version = 1;             // 区块版本号
+  bytes dataHash = 2;             // 区块数据哈希值
+  bytes prevBlockHash = 3;        // 前一个区块的哈希值
+  uint64 timestamp = 4;           // 区块生成的时间戳
+  uint32 height = 5;              // 区块高度
 }
 
 message ProtoBlock {
-  ProtoBlockHeader header = 1;
-  repeated ProtoTransaction transactions = 2;
-  bytes validator = 3;
-  bytes signature = 4;
-  bytes hash = 5;
+  ProtoBlockHeader header = 1;                // 区块头
+  repeated ProtoTransaction transactions = 2; // 区块包含的交易列表
+  bytes validator = 3;                        // 验证者公钥
+  bytes signature = 4;                        // 区块签名
+  bytes hash = 5;                             // 区块哈希
 }
