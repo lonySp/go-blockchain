@@ -10,7 +10,7 @@ import (
 // newBlockchainWithGenesis 创建一个带有创世区块的区块链
 // newBlockchainWithGenesis creates a blockchain with a genesis block
 func newBlockchainWithGenesis(t *testing.T) *Blockchain {
-	bc, err := NewBlockchain(randomBlock(0, types.Hash{}))
+	bc, err := NewBlockchain(randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 	return bc
 }
@@ -18,7 +18,7 @@ func newBlockchainWithGenesis(t *testing.T) *Blockchain {
 // TestBlockchain 测试区块链初始化功能
 // TestBlockchain tests the blockchain initialization functionality
 func TestBlockchain(t *testing.T) {
-	bc, err := NewBlockchain(randomBlock(0, types.Hash{}))
+	bc, err := NewBlockchain(randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 	assert.NotNil(t, bc.validator)
 	assert.Equal(t, bc.Height(), uint32(0))
@@ -32,13 +32,13 @@ func TestAddBlock(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
 	lenBlocks := 1000
 	for i := 0; i < lenBlocks; i++ {
-		block := randomBlockWithSignature(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
+		block := randomBlock(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
 		assert.Nil(t, bc.AddBlock(block))
 	}
 
 	assert.Equal(t, bc.Height(), uint32(lenBlocks))
 	assert.Equal(t, len(bc.headers), lenBlocks+1)
-	assert.NotNil(t, bc.AddBlock(randomBlock(89, types.Hash{})))
+	assert.NotNil(t, bc.AddBlock(randomBlock(t, 89, types.Hash{})))
 }
 
 // TestHashBlock 测试区块链是否包含某个高度的区块
@@ -56,7 +56,7 @@ func TestGetHeader(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
 	lenBlocks := 1000
 	for i := 0; i < lenBlocks; i++ {
-		block := randomBlockWithSignature(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
+		block := randomBlock(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
 		assert.Nil(t, bc.AddBlock(block))
 		header, err := bc.GetHeader(uint32(i + 1))
 		assert.Nil(t, err)
@@ -68,7 +68,7 @@ func TestGetHeader(t *testing.T) {
 // TestAddBlockToHigh tests adding a block with too high height
 func TestAddBlockToHigh(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
-	assert.NotNil(t, bc.AddBlock(randomBlockWithSignature(t, 3, types.Hash{})))
+	assert.NotNil(t, bc.AddBlock(randomBlock(t, 3, types.Hash{})))
 }
 
 // getPrevBlockHash 获取前一个区块的哈希值

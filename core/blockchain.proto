@@ -23,10 +23,10 @@ message ProtoTransaction {
 
 message ProtoBlockHeader {
   uint32 version = 1;
-  bytes prevBlockHash = 2;
-  uint64 timestamp = 3;
-  uint32 height = 4;
-  uint64 nonce = 5;
+  bytes dataHash = 2;
+  bytes prevBlockHash = 3;
+  uint64 timestamp = 4;
+  uint32 height = 5;
 }
 
 message ProtoBlock {

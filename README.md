@@ -13,6 +13,12 @@ go-blockchain is a blockchain implementation in Golang.
 7. Adding Mutex Locks & Expanding Transaction Pool with Tests.
 8. The added RPC functionality includes processing decoded messages and broadcasting transactions.
 9. Change the encoding mode to protobuf
+10. Connect local server transport nodes, start the server, create a transaction every second, and create a block every five seconds.
+
+
+
+## News
+1.log change => kitlog
 
 
 ## bug:

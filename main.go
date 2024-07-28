@@ -6,6 +6,7 @@ import (
 	"github.com/lonySp/go-blockchain/crypto"
 	"github.com/lonySp/go-blockchain/network"
 	"github.com/sirupsen/logrus"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
@@ -39,7 +40,10 @@ func main() {
 	// Create server options and start the server
 	privateKey := crypto.GeneratePrivateKey()
 	opts := network.ServerOpts{PrivateKey: &privateKey, ID: "LOCAL", Transport: []network.Transport{trLocal}}
-	server := network.NewServer(opts)
+	server, err := network.NewServer(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 	server.Start()
 }
 

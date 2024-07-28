@@ -64,14 +64,14 @@ func TestTxEncodeDecode(t *testing.T) {
 
 	// 验证解码后的交易与原交易相等
 	// Verify that the decoded transaction is equal to the original transaction
-	assert.Equal(t, tx, txDecoded)
+	assert.Equal(t, &tx, txDecoded)
 }
 
 // randomTxWithSignature 创建一个带签名的随机交易
 // randomTxWithSignature creates a random transaction with a signature
-func randomTxWithSignature(t *testing.T) *Transaction {
+func randomTxWithSignature(t *testing.T) Transaction {
 	privateKey := crypto.GeneratePrivateKey()
-	tx := &Transaction{
+	tx := Transaction{
 		Data: []byte("foo"),
 	}
 	assert.Nil(t, tx.Sign(privateKey))
