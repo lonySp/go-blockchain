@@ -9,11 +9,12 @@ import (
 // Blockchain 结构体表示区块链
 // Blockchain struct represents the blockchain
 type Blockchain struct {
-	logger    log.Logger   // 日志记录器 // Logger for logging
-	store     Storage      // 存储区块链数据的存储接口 // Storage interface for blockchain data
-	lock      sync.RWMutex // 读写锁，用于并发访问区块链 // Read-write lock for concurrent access to the blockchain
-	headers   []*Header    // 区块链中的区块头列表 // List of block headers in the blockchain
-	validator Validator    // 验证器，用于验证区块 // Validator for validating blocks
+	logger        log.Logger   // 日志记录器 // Logger for logging
+	store         Storage      // 存储区块链数据的存储接口 // Storage interface for blockchain data
+	lock          sync.RWMutex // 读写锁，用于并发访问区块链 // Read-write lock for concurrent access to the blockchain
+	headers       []*Header    // 区块链中的区块头列表 // List of block headers in the blockchain
+	validator     Validator    // 验证器，用于验证区块 // Validator for validating blocks
+	contractState *State       // 合约状态 // Contract state
 }
 
 // NewBlockchain 创建一个新的区块链
@@ -21,9 +22,10 @@ type Blockchain struct {
 func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	// 初始化区块链实例 // Initialize blockchain instance
 	bc := &Blockchain{
-		headers: []*Header{},
-		store:   NewMemoryStore(), // 使用内存存储 // Use in-memory storage
-		logger:  l,
+		contractState: NewState(),
+		headers:       []*Header{},
+		store:         NewMemoryStore(), // 使用内存存储 // Use in-memory storage
+		logger:        l,
 	}
 	// 设置区块验证器 // Set the block validator
 	bc.validator = NewBlockValidator(bc)
@@ -50,11 +52,12 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 	// 执行每个交易的数据代码 // Execute the code for each transaction's data
 	for _, tx := range b.Transactions {
 		bc.logger.Log("msg", "executing code", "len", len(tx.Data), "hash", tx.Hash(&TxHasher{}))
-		vm := NewVM(tx.Data)             // 创建虚拟机实例 // Create a VM instance
-		if err := vm.Run(); err != nil { // 运行虚拟机 // Run the VM
+		vm := NewVM(tx.Data, bc.contractState) // 创建虚拟机实例 // Create a VM instance
+		if err := vm.Run(); err != nil {       // 运行虚拟机 // Run the VM
 			return err
 		}
-		bc.logger.Log("vm result", vm.stack.data[vm.stack.sp]) // 记录虚拟机结果 // Log the VM result
+
+		fmt.Printf("STATE: %+v \n", vm.contractState) // 打印合约状态 // Print the contract state
 	}
 
 	// 添加未验证的区块 // Add the block without validation

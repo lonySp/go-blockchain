@@ -45,15 +45,15 @@ func main() {
 
 	// 延迟连接新的远程节点
 	// Delay connection of a new remote node
-	go func() {
-		time.Sleep(7 * time.Second)
-
-		trLate := network.NewLocalTransport("LATE_REMOTE")
-		trRemoteC.Connect(trLate)
-		lateServer := makeServer("LATE_REMOTE", trLate, nil)
-
-		go lateServer.Start()
-	}()
+	//go func() {
+	//	time.Sleep(7 * time.Second)
+	//
+	//	trLate := network.NewLocalTransport("LATE_REMOTE")
+	//	trRemoteC.Connect(trLate)
+	//	lateServer := makeServer("LATE_REMOTE", trLate, nil)
+	//
+	//	go lateServer.Start()
+	//}()
 
 	// 创建服务器选项并启动服务器
 	// Create server options and start the server
@@ -91,10 +91,7 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privateKey := crypto.GeneratePrivateKey()
 
 	// 创建交易数据
-	// Create transaction data
-	// data := []byte(strconv.FormatInt(int64(rand.Intn(1000)), 10))
-
-	data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 
 	// 创建新交易
 	// Create a new transaction

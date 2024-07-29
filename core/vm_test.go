@@ -22,10 +22,13 @@ func TestStack(t *testing.T) {
 // TestVM 测试虚拟机功能
 // TestVM tests the VM functionality
 func TestVM(t *testing.T) {
-	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d} // 示例字节码 // Example bytecode
-	vm := NewVM(data)                                                    // 创建虚拟机实例 // Create a VM instance
-	assert.Nil(t, vm.Run())                                              // 运行虚拟机并验证是否没有错误 // Run the VM and verify no errors
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f} // 示例字节码 // Example bytecode
+	contractState := NewState()                                                            // 创建合约状态实例 // Create a contract state instance
+	vm := NewVM(data, contractState)                                                       // 创建虚拟机实例 // Create a VM instance
+	assert.Nil(t, vm.Run())                                                                // 运行虚拟机并验证没有错误 // Run the VM and verify no errors
 
-	result := vm.stack.Pop().([]byte)      // 获取栈顶结果 // Get the result from the stack
-	assert.Equal(t, "FOO", string(result)) // 验证结果是否为"FOO" // Verify the result is "FOO"
+	valueBytes, err := contractState.Get([]byte("FOO")) // 从合约状态获取存储的值 // Get the stored value from the contract state
+	value := deserializeInt64(valueBytes)               // 反序列化值 // Deserialize the value
+	assert.Nil(t, err)                                  // 验证没有错误 // Verify no errors
+	assert.Equal(t, value, int64(5))                    // 验证值是否为5 // Verify the value is 5
 }

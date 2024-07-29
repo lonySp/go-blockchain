@@ -16,6 +16,7 @@ go-blockchain is a blockchain implementation in Golang.
 10. Connect local server transport nodes, start the server, create a transaction every second, and create a block every five seconds.
 11. Reconstructing the transaction pool, adding block broadcasting
 12. impl VM basic (supporting basic arithmetic operations and stack manipulation)
+13. Implement virtual machine contract state transition
 
 
 

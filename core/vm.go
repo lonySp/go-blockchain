@@ -1,15 +1,20 @@
 package core
 
+import (
+	"encoding/binary"
+)
+
 // Instruction 定义字节码指令
 // Instruction defines bytecode instructions
 type Instruction byte
 
 const (
-	InstrPushInt  Instruction = 0x0a //10 // 推入整数 // Push integer
-	InstrAdd      Instruction = 0x0b //11 // 加法操作 // Addition operation
-	InstrPushByte Instruction = 0x0c //12 // 推入字节 // Push byte
-	InstrPack     Instruction = 0x0d //13 // 打包字节数组 // Pack byte array
-	InstrSub      Instruction = 0x0e //14 // 减法操作 // Subtraction operation
+	InstrPushInt  Instruction = 0x0a // 10 // 推入整数 // Push integer
+	InstrAdd      Instruction = 0x0b // 11 // 加法操作 // Addition operation
+	InstrPushByte Instruction = 0x0c // 12 // 推入字节 // Push byte
+	InstrPack     Instruction = 0x0d // 13 // 打包字节数组 // Pack byte array
+	InstrSub      Instruction = 0x0e // 14 // 减法操作 // Subtraction operation
+	instrStore    Instruction = 0x0f // 15 // 存储 // Store
 )
 
 // Stack 结构体表示一个栈
@@ -47,18 +52,20 @@ func (s *Stack) Pop() any {
 // VM 结构体表示一个虚拟机
 // VM struct represents a virtual machine
 type VM struct {
-	data  []byte // 字节码数据 // Bytecode data
-	ip    int    // 指令指针 // Instruction pointer
-	stack *Stack // 栈实例 // Stack instance
+	data          []byte // 字节码数据 // Bytecode data
+	ip            int    // 指令指针 // Instruction pointer
+	stack         *Stack // 栈实例 // Stack instance
+	contractState *State // 合约状态 // Contract state
 }
 
 // NewVM 创建一个新的虚拟机实例
 // NewVM creates a new VM instance
-func NewVM(data []byte) *VM {
+func NewVM(data []byte, contractState *State) *VM {
 	return &VM{
-		data:  data,
-		ip:    0,
-		stack: NewStack(128),
+		contractState: contractState,
+		data:          data,
+		ip:            0,
+		stack:         NewStack(128),
 	}
 }
 
@@ -84,10 +91,24 @@ func (vm *VM) Run() error {
 // Exec executes a single instruction
 func (vm *VM) Exec(instr Instruction) error {
 	switch instr {
+	case instrStore:
+		// 存储指令 // Store instruction
+		var (
+			key             = vm.stack.Pop().([]byte)
+			value           = vm.stack.Pop()
+			serializedValue []byte
+		)
+		switch v := value.(type) {
+		case int:
+			serializedValue = serializeInt64(int64(v))
+		default:
+			panic("TODO: unknown type")
+		}
+		vm.contractState.Put(key, serializedValue)
 	case InstrPushInt:
 		vm.stack.Push(int(vm.data[vm.ip-1])) // 推入整数到栈 // Push an integer onto the stack
 	case InstrPushByte:
-		vm.stack.Push(byte(vm.data[vm.ip-1])) // 推入字节到栈 // Push a byte onto the stack
+		vm.stack.Push(vm.data[vm.ip-1]) // 推入字节到栈 // Push a byte onto the stack
 	case InstrPack:
 		n := vm.stack.Pop().(int) // 从栈中弹出整数 // Pop an integer from the stack
 		b := make([]byte, n)
@@ -107,4 +128,18 @@ func (vm *VM) Exec(instr Instruction) error {
 		vm.stack.Push(c)          // 将结果推入栈 // Push the result onto the stack
 	}
 	return nil
+}
+
+// serializeInt64 序列化 int64
+// serializeInt64 serializes int64
+func serializeInt64(value int64) []byte {
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, uint64(value))
+	return buf
+}
+
+// deserializeInt64 反序列化 int64
+// deserializeInt64 deserializes int64
+func deserializeInt64(buf []byte) int64 {
+	return int64(binary.LittleEndian.Uint64(buf))
 }
