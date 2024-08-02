@@ -17,16 +17,4 @@ go-blockchain is a blockchain implementation in Golang.
 11. Reconstructing the transaction pool, adding block broadcasting
 12. impl VM basic (supporting basic arithmetic operations and stack manipulation)
 13. Implement virtual machine contract state transition
-
-
-
-## News
-1.log change => kitlog
-2.Change the encoding mode to protobuf
-
-
-## bug:
-    code => transaction_test.go => TestTxEncodeDecode => BUG(waiting for a solution)
-    type not registered for interface: elliptic.p256Curve 
-    solution:
-    Change the encoding mode to protobuf
+14. Implements custom smart contract

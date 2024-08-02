@@ -91,6 +91,7 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privateKey := crypto.GeneratePrivateKey()
 
 	// 创建交易数据
+	// Create transaction data
 	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 
 	// 创建新交易

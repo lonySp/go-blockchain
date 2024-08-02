@@ -1,34 +1,58 @@
 package core
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-// TestStack 测试栈功能
-// TestStack tests the stack functionality
+// TestStack 用于测试 Stack 数据结构的功能
+// TestStack is used to test the functionality of the Stack data structure
 func TestStack(t *testing.T) {
-	s := NewStack(128) // 创建栈实例 // Create a stack instance
-	s.Push(1)          // 推入元素1 // Push element 1
-	s.Push(2)          // 推入元素2 // Push element 2
+	// 创建一个大小为128的栈
+	// Create a stack with a size of 128
+	s := NewStack(128)
 
-	value := s.Pop()          // 弹出元素 // Pop element
-	assert.Equal(t, value, 1) // 验证弹出的元素是否为1 // Verify the popped element is 1
+	// 压入元素1和2
+	// Push elements 1 and 2
+	s.Push(1)
+	s.Push(2)
 
-	value = s.Pop()           // 再次弹出元素 // Pop another element
-	assert.Equal(t, value, 2) // 验证弹出的元素是否为2 // Verify the popped element is 2
+	// 弹出一个元素并检查是否为1
+	// Pop an element and check if it is 1
+	value := s.Pop()
+	assert.Equal(t, value, 1)
+
+	// 再弹出一个元素并检查是否为2
+	// Pop another element and check if it is 2
+	value = s.Pop()
+	assert.Equal(t, value, 2)
 }
 
-// TestVM 测试虚拟机功能
-// TestVM tests the VM functionality
+// TestVM 用于测试虚拟机的功能
+// TestVM is used to test the functionality of the virtual machine (VM)
 func TestVM(t *testing.T) {
-	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f} // 示例字节码 // Example bytecode
-	contractState := NewState()                                                            // 创建合约状态实例 // Create a contract state instance
-	vm := NewVM(data, contractState)                                                       // 创建虚拟机实例 // Create a VM instance
-	assert.Nil(t, vm.Run())                                                                // 运行虚拟机并验证没有错误 // Run the VM and verify no errors
+	// 初始化合约数据
+	// Initialize contract data
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
+	// 创建合约状态
+	// Create contract state
+	contractState := NewState()
+	// 创建虚拟机实例
+	// Create VM instance
+	vm := NewVM(data, contractState)
+	// 运行虚拟机并确保没有错误
+	// Run the VM and ensure no errors
+	assert.Nil(t, vm.Run())
 
-	valueBytes, err := contractState.Get([]byte("FOO")) // 从合约状态获取存储的值 // Get the stored value from the contract state
-	value := deserializeInt64(valueBytes)               // 反序列化值 // Deserialize the value
-	assert.Nil(t, err)                                  // 验证没有错误 // Verify no errors
-	assert.Equal(t, value, int64(5))                    // 验证值是否为5 // Verify the value is 5
+	// 从合约状态获取键为 "FOO" 的值并反序列化为 int64 类型
+	// Get the value with key "FOO" from the contract state and deserialize it to int64
+	valueBytes, err := contractState.Get([]byte("FOO"))
+	value := deserializeInt64(valueBytes)
+	// 确保没有错误
+	// Ensure no errors
+	assert.Nil(t, err)
+	// 检查值是否为5
+	// Check if the value is 5
+	assert.Equal(t, value, int64(5))
 }
